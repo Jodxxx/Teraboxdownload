@@ -84,7 +84,7 @@ if len(DATABASE_URL) == 0:
 SHORTENER_API = os.environ.get('SHORTENER_API', '')
 if len(SHORTENER_API) == 0:
     logging.error("SHORTENER_API variable is missing! Exiting now")
-    exit(1)
+    SHORTENER_API= None
 
 USER_SESSION_STRING = os.environ.get('USER_SESSION_STRING', '')
 if len(USER_SESSION_STRING) == 0:
@@ -139,51 +139,51 @@ def format_size(size):
     else:
         return f"{size / (1024 * 1024 * 1024):.2f} GB"
 
-def shorten_url(url):
+#def shorten_url(url):
     #You can change api_url with your choice shortener
-    api_url = "https://api.modijiurl.com/api"
-    params = {
-        "api": SHORTENER_API,
-        "url": url
-    }
-    try:
-        response = requests.get(api_url, params=params)
-        response.raise_for_status()
-        data = response.json()
-        if data.get("status") == "success":
-            return data.get("shortenedUrl")
-        else:
-            logger.error(f"Failed to shorten URL: {data}")
-            return None
-    except Exception as e:
-        logger.error(f"Error shortening URL: {e}")
-        return None
+#    api_url = "https://api.modijiurl.com/api"
+#    params = {
+#        "api": SHORTENER_API,
+#        "url": url
+#    }
+#    try:
+#        response = requests.get(api_url, params=params)
+#        response.raise_for_status()
+ #       data = response.json()
+#        if data.get("status") == "success":
+ #           return data.get("shortenedUrl")
+#        else:
+ #           logger.error(f"Failed to shorten URL: {data}")
+#            return None
+#    except Exception as e:
+#        logger.error(f"Error shortening URL: {e}")
+#        return None
 
-def generate_uuid(user_id):
-    token = str(uuid.uuid4())
-    collection.update_one(
-        {"user_id": user_id},
-        {"$set": {"token": token, "token_status": "inactive", "token_expiry": None}},
-        upsert=True
-    )
-    return token
+#def generate_uuid(user_id):
+#    token = str(uuid.uuid4())
+#    collection.update_one(
+#        {"user_id": user_id},
+ #       {"$set": {"token": token, "token_status": "inactive", "token_expiry": None}},
+#        upsert=True
+#    )
+#    return token
 
-def activate_token(user_id, token):
-    user_data = collection.find_one({"user_id": user_id, "token": token})
-    if user_data:
-        collection.update_one(
-            {"user_id": user_id, "token": token},
-            {"$set": {"token_status": "active", "token_expiry": datetime.now() + timedelta(hours=12)}}
-        )
-        return True
-    return False
+#def activate_token(user_id, token):
+#    user_data = collection.find_one({"user_id": user_id, "token": token})
+#    if user_data:
+ #       collection.update_one(
+#            {"user_id": user_id, "token": token},
+   #         {"$set": {"token_status": "active", "token_expiry": datetime.now() + timedelta(hours=12)}}
+   #     )
+   #     return True
+ #   return False
 
-def has_valid_token(user_id):
-    user_data = collection.find_one({"user_id": user_id})
-    if user_data and user_data.get("token_status") == "active":
-        if datetime.now() < user_data.get("token_expiry"):
-            return True
-    return False
+#def has_valid_token(user_id):
+   # user_data = collection.find_one({"user_id": user_id})
+ #   if user_data and user_data.get("token_status") == "active":
+   #     if datetime.now() < user_data.get("token_expiry"):
+        #  return True
+#    return False
 
 @app.on_message(filters.command("start"))
 async def start_command(client: Client, message: Message):
@@ -197,7 +197,7 @@ async def start_command(client: Client, message: Message):
         token = message.command[1]
         user_id = message.from_user.id
 
-        if activate_token(user_id, token):
+    #    if activate_token(user_id, token):
             if os.path.exists(video_file_id):
                 await client.send_video(
                     chat_id=message.chat.id,
@@ -274,7 +274,7 @@ async def handle_message(client: Client, message: Message):
         await message.reply_text("ʏᴏᴜ ᴍᴜsᴛ ᴊᴏɪɴ ᴍʏ ᴄʜᴀɴɴᴇʟ ᴛᴏ ᴜsᴇ ᴍᴇ.", reply_markup=reply_markup)
         return
 
-    if not has_valid_token(user_id):
+    if has_valid_token(user_id):
         await message.reply_text(
             "Your token has expired or you haven't generated one yet.\n"
             "Please generate a new token using /start."
